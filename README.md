@@ -1,5 +1,5 @@
 # Thesis-MultiEstimand-Extension-Template
-
+This repository is a **public template** that extends my 2024 MSc thesis workflow with a robustness-focused two-wave pipeline. The emphasis is on verifying that any biomarker–outcome coupling signals are not artifacts of a single change definition or model specification, and on visualising whether change patterns depend on baseline age (age timeline). The template uses **toy/simulated data only** and includes no real datasets or results.
 
 ## How to run
 
@@ -22,7 +22,7 @@ Runs a two-wave pipeline:
 **Outputs:**
 - Written to `outputs/trackB_singleROI/`
 
-### Track A: Multi-feature/ROI + multi-estimand robustness (coming next)
+### Track A: Multi-feature/ROI + multi-estimand robustness 
 This track will cover:
 - Multi-feature within-person coupling (LME cwc/pm) across a pre-specified feature set
 - Change-score robustness across multiple estimands (raw, percent, log ratio, absolute magnitude)
@@ -43,7 +43,11 @@ This track will cover:
 
 This template implements **targeted mediation analysis** (ACME/ADE/total effects; `mediation` package) in a two-wave change-score setting. It extends a core mediation workflow by incorporating baseline-age adjustment, multi-estimand change definitions (raw Δ, %Δ, log-ratio, |Δ|), and BH–FDR correction within pre-defined hypothesis families to support robustness-focused reporting.
 
-
+## Repository layout
+- `analysis/` Quarto workflows (Track A and Track B)
+- `R/` reusable helper functions
+- `docs/` short methodological notes and templates
+- `outputs/` created when you run the workflows (not committed)
 
 
 
