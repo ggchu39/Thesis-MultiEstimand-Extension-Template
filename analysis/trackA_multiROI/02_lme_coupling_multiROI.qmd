@@ -1,0 +1,48 @@
+---
+title: "Track A (multi-ROI): LME within-person coupling (cwc/pm)"
+format: html
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+## Purpose
+Estimate within-person coupling between outcome **Y** and ROI values across multiple ROIs/features using within-between decomposition:
+
+- `ROI_pm`: participant mean across waves (between-person component)
+- `ROI_cwc`: deviation from participant mean (within-person component)
+
+Models are fit per ROI:
+1) Base: `Y ~ time + group + Age0 + (1|ID)`
+2) Coupling: add `ROI_cwc + ROI_pm`
+3) Moderation: `ROI_cwc * group` (+ `ROI_pm`)
+
+```{r}
+library(dplyr)
+library(readr)
+library(here)
+
+source(here::here("R", "lme_cwc_pm_multi.R"))
+
+in_dir  <- here::here("outputs", "trackA_multiROI")
+out_dir <- in_dir
+
+dat_roi_long <- readRDS(file.path(in_dir, "dat_roi_long_qc_ageTimeline.rds"))
+
+res <- fit_cwc_pm_models_multiROI(
+  dat = dat_roi_long,
+  outcome = "Y",
+  id = "ID",
+  time = "time_point",
+  age0 = "Age0",
+  group = "Sex",
+  roi_value = "ROI_value",
+  roi_name = "ROI_name"
+)
+
+write_csv(res$fixed_effects, file.path(out_dir, "trackA_lme_cwcpm_fixed_effects.csv"))
+write_csv(res$model_tests,   file.path(out_dir, "trackA_lme_cwcpm_model_tests.csv"))
+write_csv(res$key_terms,     file.path(out_dir, "trackA_lme_cwcpm_key_terms.csv"))
+
+res$key_terms
