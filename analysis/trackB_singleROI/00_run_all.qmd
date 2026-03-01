@@ -1,0 +1,41 @@
+---
+title: "Track B: Run all (single-ROI)"
+format: html
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+## What this does
+Renders the Track B analysis pages in sequence:
+
+1. Build QC-safe two-wave datasets (toy data)
+2. Descriptive GAM trajectory plots
+3. LME inference + change–change link
+
+Outputs are written to: `outputs/trackB_singleROI/`
+
+```{r}
+suppressPackageStartupMessages({
+  library(here)
+  library(quarto)
+})
+
+# Files are in the same folder as this runner
+files <- c(
+  here::here("analysis", "trackB_singleROI", "01_build_long_qc.qmd"),
+  here::here("analysis", "trackB_singleROI", "02_gam_trajectory.qmd"),
+  here::here("analysis", "trackB_singleROI", "03_lme_and_delta_link.qmd")
+)
+
+# Render sequentially
+for (f in files) {
+  message("Rendering: ", f)
+  quarto::quarto_render(input = f, quiet = TRUE)
+}
+
+message("DONE. See outputs in: ", here::here("outputs", "trackB_singleROI"))
+
+
+
