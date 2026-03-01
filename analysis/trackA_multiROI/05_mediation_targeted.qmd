@@ -1,0 +1,50 @@
+---
+title: "Track A (multi-ROI): Targeted mediation analysis (ACME/ADE; change-score template)"
+format: html
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+## Purpose
+This step implements **targeted mediation analysis** using standard ACME/ADE outputs (via the `mediation` R package) in a two-wave **change-score** setting.
+
+- Mediator model: ΔROI ~ Group + Age0  
+- Outcome model: ΔY ~ ΔROI + Group + Age0  
+
+This is included as a **secondary/targeted** analysis (e.g., to quantify indirect/direct components under the specified models). As in most observational two-wave designs, results are interpreted as a **statistical decomposition of association**.
+
+```{r}
+library(dplyr)
+library(readr)
+library(here)
+
+source(here::here("R", "mediation_helpers_multiROI.R"))
+
+in_dir  <- here::here("outputs", "trackA_multiROI")
+out_dir <- in_dir
+
+# Wide estimands table from Step 03
+wide_est <- read_csv(file.path(in_dir, "trackA_wide_estimands_byROI.csv"),
+                     show_col_types = FALSE)
+
+# Example: run targeted mediation on RAW change estimands
+# Outcome: dY_raw; Mediator: dROI_raw; Group: Sex; Covariate: Age0
+res <- run_mediation_grid(
+  wide_est = wide_est,
+  roi_name = "ROI_name",
+  outcome = "dY_raw",
+  mediator = "dROI_raw",
+  treat = "Sex",
+  treat_ref = "F",
+  treat_alt = "M",
+  covar = "Age0",
+  sims = 2000,
+  method = "boot"   # "boot" or "quasi"
+)
+
+write_csv(res, file.path(out_dir, "trackA_mediation_targeted_raw.csv"))
+
+head(res)
+```
