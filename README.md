@@ -1,3 +1,5 @@
+<img width="854" height="733" alt="image" src="https://github.com/user-attachments/assets/11046809-8d65-4748-a934-7ae7ede973a9" />
+
 # Thesis-MultiEstimand-Extension-Template
 This repository is a **public template** that extends my 2024 MSc thesis workflow with a robustness-focused two-wave pipeline. The emphasis is on verifying that any biomarker–outcome coupling signals are not artifacts of a single change definition or model specification, and on visualising whether change patterns depend on baseline age (age timeline). The template uses **toy/simulated data only** and includes no real datasets or results.
 
