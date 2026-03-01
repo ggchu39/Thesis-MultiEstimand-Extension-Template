@@ -1,0 +1,54 @@
+---
+title: "Track A (multi-ROI): Multiple testing control (BH–FDR families)"
+format: html
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+## Purpose
+Apply Benjamini–Hochberg FDR correction within pre-defined families aligned to hypotheses.
+
+This step reads outputs from:
+- Track A Step 02 (LME coupling): key terms + model tests
+- Track A Step 03 (estimand engine): grid regression results
+
+It then appends BH–FDR q-values for each family and writes FDR-enhanced tables.
+
+```{r}
+library(dplyr)
+library(readr)
+library(here)
+
+source(here::here("R", "fdr_helpers_multiROI.R"))
+
+in_dir  <- here::here("outputs", "trackA_multiROI")
+out_dir <- in_dir
+
+# ---- Inputs ----
+lme_key   <- read_csv(file.path(in_dir, "trackA_lme_cwcpm_key_terms.csv"), show_col_types = FALSE)
+lme_tests <- read_csv(file.path(in_dir, "trackA_lme_cwcpm_model_tests.csv"), show_col_types = FALSE)
+est_grid  <- read_csv(file.path(in_dir, "trackA_estimand_engine_results.csv"), show_col_types = FALSE)
+
+# ---- A) LME families (across ROIs) ----
+lme_key_fdr   <- add_fdr_lme_key_terms(lme_key)
+lme_tests_fdr <- add_fdr_lme_model_tests(lme_tests)
+
+# ---- B) Estimand-engine families ----
+# Apply BH within each (estimand × model × term) across ROIs
+est_grid_fdr <- add_fdr_estimand_grid(est_grid)
+
+# ---- Write ----
+write_csv(lme_key_fdr,   file.path(out_dir, "trackA_lme_cwcpm_key_terms_FDR.csv"))
+write_csv(lme_tests_fdr, file.path(out_dir, "trackA_lme_cwcpm_model_tests_FDR.csv"))
+write_csv(est_grid_fdr,  file.path(out_dir, "trackA_estimand_engine_results_FDR.csv"))
+
+# Quick peek
+list(
+  lme_key_fdr = head(lme_key_fdr),
+  lme_tests_fdr = head(lme_tests_fdr),
+  est_grid_fdr = head(est_grid_fdr)
+)
+
+```
