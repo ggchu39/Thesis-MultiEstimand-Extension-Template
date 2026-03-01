@@ -1,0 +1,84 @@
+
+
+```markdown
+---
+title: "Track B (single-ROI): Descriptive trajectory via GAM"
+format: html
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+## Purpose
+Descriptively visualize how the ROI/feature behaves across age-at-assessment using:
+- participant spaghetti (two-wave),
+- a GAM smooth over age-at-assessment,
+- optional group-stratified smooths.
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(mgcv)
+library(tibble)
+library(here)
+
+source(here::here("R", "plot_helpers.R"))
+
+in_dir <- here::here("outputs", "trackB_singleROI")
+out_dir <- in_dir
+dat_roi_only <- readRDS(file.path(in_dir, "dat_roi_only_long_2waves.rds"))
+
+# ---- 1) Fit GAM (overall) ----
+g_overall <- mgcv::gam(ROI_mean ~ s(Age_at_assessment, k = 10),
+                       data = dat_roi_only, method = "REML")
+
+# Save summaries
+capture.output(summary(g_overall), file = file.path(out_dir, "GAM_overall_summary.txt"))
+capture.output(mgcv::gam.check(g_overall), file = file.path(out_dir, "GAM_overall_gamcheck.txt"))
+
+# ---- 2) Spaghetti + smooth plots ----
+p_overall <- plot_spaghetti_with_gam(
+  dat = dat_roi_only,
+  x = "Age_at_assessment",
+  y = "ROI_mean",
+  id = "ID",
+  gam_model = g_overall,
+  title = "Single-feature trajectory across age (two-wave observations)",
+  xlab = "Age at assessment",
+  ylab = "Feature/ROI value"
+)
+
+ggsave(file.path(out_dir, "spaghetti_gam_overall.png"),
+       p_overall, width = 9, height = 6.5, dpi = 300)
+
+p_overall
+
+
+# If you have a grouping variable (e.g., Sex), fit group-specific smooths:
+if ("Sex" %in% names(dat_roi_only)) {
+  g_by_group <- mgcv::gam(ROI_mean ~ Sex + s(Age_at_assessment, by = Sex, k = 10),
+                          data = dat_roi_only, method = "REML")
+  capture.output(summary(g_by_group), file = file.path(out_dir, "GAM_byGroup_summary.txt"))
+
+  p_by_group <- plot_spaghetti_with_gam_by_group(
+    dat = dat_roi_only,
+    x = "Age_at_assessment",
+    y = "ROI_mean",
+    id = "ID",
+    group = "Sex",
+    gam_model = g_by_group,
+    title = "Single-feature trajectory by group (descriptive)",
+    xlab = "Age at assessment",
+    ylab = "Feature/ROI value"
+  )
+
+  ggsave(file.path(out_dir, "spaghetti_gam_byGroup.png"),
+         p_by_group, width = 9, height = 6.5, dpi = 300)
+
+  p_by_group
+}
+
+
+
+
