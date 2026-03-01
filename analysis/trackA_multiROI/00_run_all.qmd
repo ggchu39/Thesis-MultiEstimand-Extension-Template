@@ -1,0 +1,29 @@
+---
+title: "Track A: Run all (multi-ROI)"
+format: html
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r}
+suppressPackageStartupMessages({
+  library(here)
+  library(quarto)
+})
+
+files <- c(
+  here::here("analysis", "trackA_multiROI", "01_build_long_qc_multiROI.qmd"),
+  here::here("analysis", "trackA_multiROI", "02_lme_coupling_multiROI.qmd"),
+  here::here("analysis", "trackA_multiROI", "03_estimand_engine.qmd"),
+  here::here("analysis", "trackA_multiROI", "04_fdr_families.qmd"),
+  here::here("analysis", "trackA_multiROI", "05_mediation_targeted.qmd")
+)
+
+for (f in files) {
+  quarto::quarto_render(input = f, quiet = TRUE)
+}
+
+message("DONE. See outputs in: ", here::here("outputs", "trackA_multiROI"))
+```
