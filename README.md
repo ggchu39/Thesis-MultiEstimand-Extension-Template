@@ -39,7 +39,9 @@ This track will cover:
 - Ensure Quarto is installed and available on your system.
 - Alternatively, render the `.qmd` files manually in numeric order within each track folder.
 
+### Mediation (ACME/ADE) in this template
 
+This template implements **targeted mediation analysis** (ACME/ADE/total effects; `mediation` package) in a two-wave change-score setting. It extends a core mediation workflow by incorporating baseline-age adjustment, multi-estimand change definitions (raw Δ, %Δ, log-ratio, |Δ|), and BH–FDR correction within pre-defined hypothesis families to support robustness-focused reporting.
 
 
 
