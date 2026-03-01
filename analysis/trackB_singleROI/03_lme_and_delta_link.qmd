@@ -1,0 +1,140 @@
+
+---
+
+## `analysis/trackB_singleROI/03_lme_and_delta_link.qmd`
+
+```markdown
+---
+title: "Track B (single-ROI): LME change + ΔΔ link to outcome"
+format: html
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+## Purpose
+Inferential models aligned to a single-feature focused analysis:
+- LME: ROI_mean ~ baseline_age × time (+ group terms)
+- Change-score link: ΔY ~ ΔROI (plus covariates)
+- Optional diagnostics plots
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(lmerTest)
+library(broom.mixed)
+library(readr)
+library(here)
+
+source(here::here("R", "lme_helpers.R"))
+source(here::here("R", "change_estimands.R"))
+source(here::here("R", "diagnostics_helpers.R"))
+
+in_dir <- here::here("outputs", "trackB_singleROI")
+out_dir <- in_dir
+
+dat_roi_only <- readRDS(file.path(in_dir, "dat_roi_only_long_2waves.rds"))
+dat_roi_y    <- readRDS(file.path(in_dir, "dat_roi_y_long_2waves.rds"))
+
+# ---- 1) LME models (random intercept only) ----
+# Core: baseline age × time
+m_core <- fit_lme_single_roi(
+  dat = dat_roi_only,
+  formula = ROI_mean ~ Age0_c * Time_years + (1 | ID)
+)
+
+# Add group terms (e.g., sex differences in change)
+m_group <- fit_lme_single_roi(
+  dat = dat_roi_only,
+  formula = ROI_mean ~ Age0_c * Time_years + Sex + Time_years:Sex + (1 | ID)
+)
+
+# Optional 3-way: does age-dependence of change differ by group?
+m_3way <- fit_lme_single_roi(
+  dat = dat_roi_only,
+  formula = ROI_mean ~ Age0_c * Time_years * Sex + (1 | ID)
+)
+
+# Save summaries
+capture.output(summary(m_core),  file = file.path(out_dir, "LME_core_summary.txt"))
+capture.output(summary(m_group), file = file.path(out_dir, "LME_group_summary.txt"))
+capture.output(summary(m_3way),  file = file.path(out_dir, "LME_3way_summary.txt"))
+
+# Model comparisons (LRT; ML fit)
+capture.output(anova(m_core, m_group), file = file.path(out_dir, "LME_core_vs_group_LRT.txt"))
+capture.output(anova(m_group, m_3way), file = file.path(out_dir, "LME_group_vs_3way_LRT.txt"))
+
+# Tidy fixed effects table
+fx_tbl <- bind_rows(
+  broom.mixed::tidy(m_core,  effects = "fixed", conf.int = TRUE) %>% mutate(model = "core"),
+  broom.mixed::tidy(m_group, effects = "fixed", conf.int = TRUE) %>% mutate(model = "group"),
+  broom.mixed::tidy(m_3way,  effects = "fixed", conf.int = TRUE) %>% mutate(model = "3way")
+)
+write_csv(fx_tbl, file.path(out_dir, "LME_fixed_effects_tidy.csv"))
+
+fx_tbl
+
+# LME diagnostics plots (Optional)
+# These are generic plots (resid vs fitted, QQ, histogram).
+save_lme_diagnostics(m_core,  file.path(out_dir, "LME_core_diagnostics.png"))
+save_lme_diagnostics(m_group, file.path(out_dir, "LME_group_diagnostics.png"))
+
+#ΔΔ link: change–change association (wide format)
+# Build wide paired dataset (T1/T2) for change scores
+wide <- dat_roi_y %>%
+  select(ID, Sex, Age0, Age0_c, time_point, Y, ROI_mean) %>%
+  pivot_wider(
+    names_from  = time_point,
+    values_from = c(Y, ROI_mean),
+    names_prefix = "t"
+  )
+
+# Compute multiple change estimands (raw/%/log/abs) for Y and ROI
+wide_chg <- add_change_estimands(
+  wide = wide,
+  vars = c("Y", "ROI_mean"),
+  t1_suffix = "t0",
+  t2_suffix = "t1"
+)
+
+write_csv(wide_chg, file.path(out_dir, "wide_change_estimands.csv"))
+
+# Primary (simple) ΔΔ link using raw signed change:
+lm_raw <- lm(dY_raw ~ dROI_mean_raw + Age0 + Sex, data = wide_chg)
+capture.output(summary(lm_raw), file = file.path(out_dir, "LM_dY_on_dROI_raw_summary.txt"))
+
+# Optional: run across all estimands for ROI and Y (robustness)
+lm_tbl <- run_change_link_models(
+  wide_chg = wide_chg,
+  outcome_prefix = "dY",
+  predictor_prefix = "dROI_mean",
+  covars = c("Age0", "Sex")
+)
+write_csv(lm_tbl, file.path(out_dir, "LM_change_link_all_estimands.csv"))
+
+lm_tbl
+
+# Optional: ΔΔ plot (raw change)
+p <- ggplot(wide_chg, aes(x = dROI_mean_raw, y = dY_raw)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE) +
+  labs(
+    title = "Change–change association (single-feature)",
+    x = "Δ Feature/ROI (raw)",
+    y = "Δ Outcome (raw)"
+  ) +
+  theme_classic()
+
+ggsave(file.path(out_dir, "delta_link_scatter_raw.png"),
+       p, width = 7.5, height = 6, dpi = 300)
+
+p
+
+
+
+
+
+
+
