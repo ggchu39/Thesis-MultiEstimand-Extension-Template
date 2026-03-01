@@ -23,18 +23,17 @@ Runs a two-wave pipeline:
 - Written to `outputs/trackB_singleROI/`
 
 ### Track A: Multi-feature/ROI + multi-estimand robustness 
-This track will cover:
+This track covers:
 - Multi-feature within-person coupling (LME cwc/pm) across a pre-specified feature set
 - Change-score robustness across multiple estimands (raw, percent, log ratio, absolute magnitude)
 - BH–FDR correction within pre-defined hypothesis families
-- Optional descriptive decomposition (non-causal)
+- Targeted mediation analysis (ACME/ADE; secondary)
 
-**Run (once added):**
+**Run:**
 - Render `analysis/trackA_multiROI/00_run_all.qmd`
 
-**Outputs (once added):**
+**Outputs:**
 - Written to `outputs/trackA_multiROI/`
-
 ### If Quarto rendering fails
 - Ensure Quarto is installed and available on your system.
 - Alternatively, render the `.qmd` files manually in numeric order within each track folder.
@@ -48,6 +47,5 @@ This template implements **targeted mediation analysis** (ACME/ADE/total effects
 - `R/` reusable helper functions
 - `docs/` short methodological notes and templates
 - `outputs/` created when you run the workflows (not committed)
-
-
+- `docs/` includes the Track A RQs/Hypotheses template and short workflow notes
 
