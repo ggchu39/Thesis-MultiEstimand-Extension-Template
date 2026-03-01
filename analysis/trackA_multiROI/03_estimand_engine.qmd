@@ -1,0 +1,66 @@
+---
+title: "Track A (multi-ROI): Multi-estimand change engine (Δ / %Δ / log / |Δ|)"
+format: html
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+## Purpose
+Compute multiple change estimands for outcome **Y** and ROI values across ROIs/features, then run a grid of change–change models:
+
+Estimands:
+- raw signed change: ΔX = X2 − X1
+- percent change: %ΔX = 100 × (X2 − X1) / X1
+- log ratio: log(X2 / X1)
+- absolute magnitude: |ΔX| = |X2 − X1|
+
+For each ROI and estimand:
+- coupling model: ΔY ~ ΔROI + Age0 + Group
+- moderation model: ΔY ~ ΔROI * Group + Age0
+
+```{r}
+library(dplyr)
+library(readr)
+library(here)
+
+source(here::here("R", "estimand_engine_multiROI.R"))
+
+in_dir  <- here::here("outputs", "trackA_multiROI")
+out_dir <- in_dir
+
+dat_long_core <- readRDS(file.path(in_dir, "dat_long_core_qc_ageTimeline.rds"))
+dat_roi_long  <- readRDS(file.path(in_dir, "dat_roi_long_qc_ageTimeline.rds"))
+
+# Build wide paired change table per ROI_name (one row per ID per ROI)
+wide_roi <- make_wide_change_table_multiROI(
+  dat_roi_long = dat_roi_long,
+  id = "ID",
+  roi_name = "ROI_name",
+  time = "time_point",
+  roi_value = "ROI_value",
+  outcome_long = dat_long_core %>% select(ID, time_point, Y, Sex, Age0),
+  outcome = "Y",
+  group = "Sex",
+  age0 = "Age0"
+)
+
+# Add estimands for Y and ROI_value
+wide_est <- add_estimands_multiROI(
+  wide_roi = wide_roi,
+  y_prefix = "Y",
+  x_prefix = "ROI"
+)
+
+# Run grid of models (like v3x)
+res <- run_estimand_grid_models(
+  wide_est = wide_est,
+  group = "Sex",
+  age0 = "Age0"
+)
+
+write_csv(wide_est, file.path(out_dir, "trackA_wide_estimands_byROI.csv"))
+write_csv(res,      file.path(out_dir, "trackA_estimand_engine_results.csv"))
+
+res
