@@ -1,0 +1,31 @@
+
+### File 2: `analysis/00_run_all.qmd`
+This is the repo-level runner, and it should contain **only** the second block (also with closing backticks):
+
+```markdown
+---
+title: "Run all analyses (repo-level)"
+format: html
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r}
+suppressPackageStartupMessages({
+  library(here)
+  library(quarto)
+})
+
+track_runners <- c(
+  here::here("analysis", "trackB_singleROI", "00_run_all.qmd"),
+  here::here("analysis", "trackA_multiROI", "00_run_all.qmd")
+)
+
+for (f in track_runners) {
+  quarto::quarto_render(input = f, quiet = TRUE)
+}
+
+message("DONE. Check outputs/trackB_singleROI and outputs/trackA_multiROI.")
+```
