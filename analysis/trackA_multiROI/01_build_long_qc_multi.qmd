@@ -1,0 +1,77 @@
+---
+title: "Track A (multi-ROI): Build QC-safe two-wave dataset + age timeline"
+format: html
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+## Purpose
+This step creates a QC-safe two-wave dataset for multi-ROI analyses and adds an explicit **age timeline**:
+- `Age0` (baseline age)
+- `Age_TP` (age at assessment: Age0 + followup_years × time_point)
+- `Age_mid` (midpoint age: Age0 + followup_years/2)
+
+It also:
+- enforces exactly T1+T2 per participant,
+- collapses duplicates within ID×wave if present,
+- computes bilateral ROI means,
+- reshapes ROIs to a long dimension (`ROI_name`, `ROI_value`) for scalable multi-ROI loops.
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(readr)
+library(here)
+
+source(here::here("R", "simulate_toy_data_multiROI.R"))
+source(here::here("R", "qc_two_wave_long_multiROI.R"))
+source(here::here("R", "reshape_multiROI.R"))
+
+out_dir <- here::here("outputs", "trackA_multiROI")
+dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
+
+# ---- 1) Load toy data (multi-ROI) ----
+# Toy wide long data columns:
+# ID, wave (T1/T2), Age0, Sex, Y,
+# ROI_A_L, ROI_A_R, ROI_B_L, ROI_B_R, ROI_C_L, ROI_C_R
+df_long <- simulate_toy_two_wave_long_multiROI(n_id = 120, followup_years = 4)
+
+# ---- 2) QC + age timeline ----
+qc <- build_qc_two_wave_multiROI(
+  df_long = df_long,
+  id_col = "ID",
+  wave_col = "wave",
+  wave_map = c("T1" = 0L, "T2" = 1L),
+  baseline_age_col = "Age0",
+  sex_col = "Sex",
+  outcome_col = "Y",
+  followup_years = 4,
+  collapse_duplicates = TRUE
+)
+
+dat_long_core <- qc$dat_long_core  # QC-safe, 2 waves per ID, includes Age timeline
+
+# ---- 3) Reshape ROIs to long ROI dimension ----
+dat_roi_long <- reshape_rois_to_long(
+  dat_long = dat_long_core,
+  roi_pairs = list(
+    ROI_A = c("ROI_A_L", "ROI_A_R"),
+    ROI_B = c("ROI_B_L", "ROI_B_R"),
+    ROI_C = c("ROI_C_L", "ROI_C_R")
+  ),
+  require_both_sides = TRUE
+)
+
+# ---- 4) Save ----
+saveRDS(dat_long_core, file.path(out_dir, "dat_long_core_qc_ageTimeline.rds"))
+saveRDS(dat_roi_long,  file.path(out_dir, "dat_roi_long_qc_ageTimeline.rds"))
+
+write_csv(qc$qc_summary, file.path(out_dir, "qc_summary.csv"))
+write_csv(qc$dropped_rows, file.path(out_dir, "dropped_rows.csv"))
+write_csv(qc$dup_inconsistency, file.path(out_dir, "dup_inconsistency.csv"))
+
+# Quick peek
+qc$qc_summary
+head(dat_roi_long)
